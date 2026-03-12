@@ -1,20 +1,10 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-interface ApiResponse<T = unknown> {
-  success: boolean;
-  data: T;
-  message?: string;
-  error?: {
-    code: string;
-    message: string;
-  };
-}
-
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<ApiResponse<T>> {
+): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

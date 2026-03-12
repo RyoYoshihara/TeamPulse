@@ -1,15 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: implement login API call
-    console.log("Login:", { email, password });
+    setError("");
+    setIsLoading(true);
+    try {
+      await login(email, password);
+    } catch (err: unknown) {
+      const apiError = err as { error?: { message?: string } };
+      setError(
+        apiError?.error?.message || "ログインに失敗しました"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -17,6 +31,7 @@ export default function LoginPage() {
       <div style={styles.card}>
         <h1 style={styles.title}>ResourceFlow</h1>
         <p style={styles.subtitle}>ログイン</p>
+        {error && <p style={styles.error}>{error}</p>}
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.field}>
             <label style={styles.label}>メールアドレス</label>
@@ -38,8 +53,8 @@ export default function LoginPage() {
               required
             />
           </div>
-          <button type="submit" style={styles.button}>
-            ログイン
+          <button type="submit" style={styles.button} disabled={isLoading}>
+            {isLoading ? "ログイン中..." : "ログイン"}
           </button>
         </form>
       </div>
@@ -74,6 +89,14 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#64748b",
     textAlign: "center" as const,
     marginBottom: 32,
+  },
+  error: {
+    padding: "8px 12px",
+    backgroundColor: "#fef2f2",
+    color: "#dc2626",
+    borderRadius: 6,
+    fontSize: 13,
+    marginBottom: 16,
   },
   form: {
     display: "flex",

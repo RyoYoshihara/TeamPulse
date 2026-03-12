@@ -1,12 +1,18 @@
 "use client";
 
+import { useAuth } from "@/lib/auth";
+
 export default function Header() {
+  const { user, logout } = useAuth();
+
   return (
     <header style={styles.header}>
       <div style={styles.breadcrumb}></div>
       <div style={styles.userArea}>
-        <span style={styles.userName}>Admin User</span>
-        <button style={styles.logoutBtn}>ログアウト</button>
+        <span style={styles.userName}>{user?.name || ""}</span>
+        <button style={styles.logoutBtn} onClick={logout}>
+          ログアウト
+        </button>
       </div>
     </header>
   );

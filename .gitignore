@@ -2,11 +2,12 @@
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDE / Tools
 .vscode/
 .idea/
 *.swp
 *.swo
+.claude/
 
 # Environment variables
 .env

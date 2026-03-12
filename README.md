@@ -79,7 +79,21 @@ docker compose up --build
 
 # 3. 初回のDBマイグレーション（別ターミナルで実行）
 docker compose exec backend alembic upgrade head
+
+# 4. 初期データ投入
+docker compose exec backend python -m app.db.seed
 ```
+
+### 初期アカウント
+
+シードデータ投入後、以下のアカウントでログインできます。
+
+| 項目 | 値 |
+|---|---|
+| Email | `admin@example.com` |
+| Password | `password` |
+| ロール | admin |
+| 組織 | Sample Corp |
 
 ### アクセス先
 
