@@ -7,6 +7,7 @@ from app.db.session import get_db
 from app.api.v1.deps import get_current_user
 from app.models.user import User
 from app.schemas.member import (
+    AccountInfo,
     MemberCreate,
     MemberUpdate,
     MemberResponse,
@@ -19,7 +20,9 @@ from app.models.project import Project
 router = APIRouter(prefix="/members", tags=["members"])
 
 
-def _to_response(member) -> MemberResponse:
+def _to_response(member, db: Session) -> MemberResponse:
+    user = member_service.get_user_by_member(db, member.id)
+    account = AccountInfo(email=user.email, role=user.role) if user else None
     return MemberResponse(
         id=str(member.id),
         organization_id=str(member.organization_id),
@@ -31,6 +34,7 @@ def _to_response(member) -> MemberResponse:
         employment_type=member.employment_type,
         is_active=member.is_active,
         joined_at=member.joined_at,
+        account=account,
     )
 
 
@@ -48,7 +52,7 @@ def list_members(
         db, current_user.organization_id, page, limit, keyword, department, is_active
     )
     return MemberListResponse(
-        items=[_to_response(m) for m in items],
+        items=[_to_response(m, db) for m in items],
         total=total,
         page=page,
         limit=limit,
@@ -62,7 +66,7 @@ def create_member(
     db: Session = Depends(get_db),
 ):
     member = member_service.create_member(db, current_user.organization_id, body)
-    return _to_response(member)
+    return _to_response(member, db)
 
 
 @router.get("/{member_id}", response_model=MemberResponse)
@@ -72,7 +76,7 @@ def get_member(
     db: Session = Depends(get_db),
 ):
     member = member_service.get_member(db, current_user.organization_id, member_id)
-    return _to_response(member)
+    return _to_response(member, db)
 
 
 @router.patch("/{member_id}", response_model=MemberResponse)
@@ -85,7 +89,7 @@ def update_member(
     member = member_service.update_member(
         db, current_user.organization_id, member_id, body
     )
-    return _to_response(member)
+    return _to_response(member, db)
 
 
 @router.delete("/{member_id}", status_code=204)

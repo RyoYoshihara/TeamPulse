@@ -1,5 +1,22 @@
 from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+
+
+class AccountCreate(BaseModel):
+    email: EmailStr
+    password: str
+    role: str = "member"
+
+
+class AccountUpdate(BaseModel):
+    email: EmailStr | None = None
+    password: str | None = None
+    role: str | None = None
+
+
+class AccountInfo(BaseModel):
+    email: str
+    role: str
 
 
 class MemberCreate(BaseModel):
@@ -10,6 +27,7 @@ class MemberCreate(BaseModel):
     monthly_capacity_hours: int | None = None
     employment_type: str | None = None
     joined_at: date | None = None
+    account: AccountCreate | None = None
 
 
 class MemberUpdate(BaseModel):
@@ -21,6 +39,7 @@ class MemberUpdate(BaseModel):
     employment_type: str | None = None
     is_active: bool | None = None
     joined_at: date | None = None
+    account: AccountUpdate | None = None
 
 
 class MemberResponse(BaseModel):
@@ -34,6 +53,7 @@ class MemberResponse(BaseModel):
     employment_type: str | None = None
     is_active: bool
     joined_at: date | None = None
+    account: AccountInfo | None = None
 
     class Config:
         from_attributes = True

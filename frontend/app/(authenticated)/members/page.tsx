@@ -4,6 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+interface AccountInfo {
+  email: string;
+  role: string;
+}
+
 interface Member {
   id: string;
   name: string;
@@ -13,6 +18,7 @@ interface Member {
   employment_type: string | null;
   is_active: boolean;
   employee_code: string | null;
+  account: AccountInfo | null;
 }
 
 interface MemberListResponse {
@@ -79,6 +85,7 @@ export default function MembersPage() {
               <th style={styles.th}>役職</th>
               <th style={styles.th}>月次稼働上限</th>
               <th style={styles.th}>雇用区分</th>
+              <th style={styles.th}>アカウント</th>
               <th style={styles.th}>状態</th>
               <th style={styles.th}>操作</th>
             </tr>
@@ -92,6 +99,15 @@ export default function MembersPage() {
                 <td style={styles.td}>{m.position || "-"}</td>
                 <td style={styles.td}>{m.monthly_capacity_hours ? `${m.monthly_capacity_hours}h` : "-"}</td>
                 <td style={styles.td}>{m.employment_type || "-"}</td>
+                <td style={styles.td}>
+                  {m.account ? (
+                    <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 12, backgroundColor: "#dbeafe", color: "#1e40af" }}>
+                      {m.account.role}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 12, color: "#94a3b8" }}>-</span>
+                  )}
+                </td>
                 <td style={styles.td}>
                   <span style={{
                     padding: "2px 8px",
@@ -110,7 +126,7 @@ export default function MembersPage() {
             ))}
             {data?.items.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ ...styles.td, textAlign: "center", color: "#94a3b8" }}>
+                <td colSpan={9} style={{ ...styles.td, textAlign: "center", color: "#94a3b8" }}>
                   メンバーが登録されていません
                 </td>
               </tr>
@@ -142,19 +158,25 @@ function MemberCreateModal({ onClose, onCreated }: { onClose: () => void; onCrea
     name: "", employee_code: "", department: "", position: "",
     monthly_capacity_hours: "", employment_type: "full_time",
   });
+  const [createAccount, setCreateAccount] = useState(false);
+  const [accountForm, setAccountForm] = useState({ email: "", password: "", role: "member" });
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     try {
-      await api.post("/api/v1/members", {
+      const body: Record<string, unknown> = {
         ...form,
         monthly_capacity_hours: form.monthly_capacity_hours ? Number(form.monthly_capacity_hours) : null,
         employee_code: form.employee_code || null,
         department: form.department || null,
         position: form.position || null,
-      });
+      };
+      if (createAccount && accountForm.email && accountForm.password) {
+        body.account = { email: accountForm.email, password: accountForm.password, role: accountForm.role };
+      }
+      await api.post("/api/v1/members", body);
       onCreated();
     } catch {
       setError("メンバーの作成に失敗しました");
@@ -196,6 +218,35 @@ function MemberCreateModal({ onClose, onCreated }: { onClose: () => void; onCrea
               <option value="outsource">業務委託</option>
             </select>
           </label>
+
+          <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 12, marginTop: 4 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 500, cursor: "pointer" }}>
+              <input type="checkbox" checked={createAccount} onChange={e => setCreateAccount(e.target.checked)} />
+              ログインアカウントを作成する
+            </label>
+          </div>
+
+          {createAccount && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 12, backgroundColor: "#f8fafc", borderRadius: 6 }}>
+              <label style={styles.fieldLabel}>
+                メールアドレス <span style={{ color: "#dc2626" }}>*</span>
+                <input type="email" value={accountForm.email} onChange={e => setAccountForm({ ...accountForm, email: e.target.value })} style={styles.modalInput} required />
+              </label>
+              <label style={styles.fieldLabel}>
+                パスワード <span style={{ color: "#dc2626" }}>*</span>
+                <input type="password" value={accountForm.password} onChange={e => setAccountForm({ ...accountForm, password: e.target.value })} style={styles.modalInput} required minLength={6} />
+              </label>
+              <label style={styles.fieldLabel}>
+                ロール
+                <select value={accountForm.role} onChange={e => setAccountForm({ ...accountForm, role: e.target.value })} style={styles.modalInput}>
+                  <option value="member">メンバー</option>
+                  <option value="manager">マネージャー</option>
+                  <option value="admin">管理者</option>
+                </select>
+              </label>
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
             <button type="button" onClick={onClose} style={styles.cancelBtn}>キャンセル</button>
             <button type="submit" style={styles.primaryBtn}>登録</button>
