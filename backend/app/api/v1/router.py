@@ -1,8 +1,10 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, health, members
+from app.api.v1.endpoints import auth, health, members, projects, assignments
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(auth.router)
 api_router.include_router(members.router)
+api_router.include_router(projects.router)
+api_router.include_router(assignments.router)

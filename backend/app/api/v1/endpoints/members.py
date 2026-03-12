@@ -12,7 +12,9 @@ from app.schemas.member import (
     MemberResponse,
     MemberListResponse,
 )
-from app.services import member_service
+from app.services import member_service, assignment_service
+from app.schemas.assignment import AllocationSummary, AssignmentResponse
+from app.models.project import Project
 
 router = APIRouter(prefix="/members", tags=["members"])
 
@@ -93,3 +95,34 @@ def delete_member(
     db: Session = Depends(get_db),
 ):
     member_service.delete_member(db, current_user.organization_id, member_id)
+
+
+@router.get("/{member_id}/allocation-summary", response_model=AllocationSummary)
+def get_allocation_summary(
+    member_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    total_rate, assignments = assignment_service.get_member_allocation_summary(
+        db, current_user.organization_id, member_id
+    )
+    items = []
+    for a in assignments:
+        project = db.query(Project).filter(Project.id == a.project_id).first()
+        items.append(AssignmentResponse(
+            id=str(a.id),
+            organization_id=str(a.organization_id),
+            project_id=str(a.project_id),
+            member_id=str(a.member_id),
+            allocation_rate=a.allocation_rate,
+            start_date=a.start_date,
+            end_date=a.end_date,
+            role=a.role,
+            is_primary=a.is_primary,
+            project_name=project.name if project else None,
+        ))
+    return AllocationSummary(
+        member_id=str(member_id),
+        current_allocation_rate=total_rate,
+        assignments=items,
+    )
